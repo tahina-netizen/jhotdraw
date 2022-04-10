@@ -1,4 +1,7 @@
 
+# Améliorations
+Les améliorations qui ont été tentés sur ce projet sont sur la branche `gl-tasks`.
+
 ## Refactoring: extract method pour les méthodes trop grandes
 Les modifications présentées ici correspondent au commit 
 `8fbbe65047a35a08ae8f0c7defb5c4b59fee16f6`.
@@ -19,7 +22,7 @@ Objectifs:
 * améliorer la lisibilité de la méthode en diminuant son contenu 
 
 ## Refatoring: push up method qui aboutit à la création d'une classe abstraite
-Les modifications présentées ici correspondent au(x) commit(s):
+Les modifications présentées ici correspondent au(x) commit(s): `b7a0408a934468d42d68f4194cf010dae4e719be`.
 
 Après le refactoring précédent, on remarque des méthodes communs pour `org.jhotdraw.draw.liner.CurvedLiner`, `org.jhotdraw.draw.liner.ElbowLiner` et `org.jhotdraw.draw.liner.SlantedLiner`
 
@@ -36,3 +39,12 @@ Pour s'assurer que les sous-classes ne rédéfinissent pas `AbstractLiner#lineou
 on le déclare en tant que `final`
 
 * On constate qu'on peut aussi faire remonter les méthodes telles que `createHandles()` et `clone()`
+
+# Difficultés rencontrées
+## Dans la partie analyse
+* Synthétiser les différentes métriques pour aboutir à des conclusions (god classes, ...)
+
+* Trouver des outils fournissant des métriques intéressantes tels que le couplage, la cohésion, ...
+
+## Dans la partie amélioration
+* La lacune en tests automatisés du projet rend les améliorations difficiles car à chaque améliorations qui modifient le code, on risque d'introduire des bugs dans le logiciel. Sans les tests, on ne peut pas s'assurer que les améliorations sont bonnes.
