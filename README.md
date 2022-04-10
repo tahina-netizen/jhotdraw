@@ -1,8 +1,8 @@
 # jhotdraw
 
-* maven build process
-* restructured project layout
-  * introduced submodules
+This fork is used for software engineering project (UE Génie logiciel).
+A report document describing the modifications made to this project 
+can be found at the root of this project, as a file named `RAPPORT.md`.
 
 ## License
 
