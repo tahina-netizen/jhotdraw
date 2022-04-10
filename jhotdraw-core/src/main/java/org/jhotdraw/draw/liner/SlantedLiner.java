@@ -8,11 +8,8 @@
 package org.jhotdraw.draw.liner;
 
 import java.awt.geom.*;
-import java.util.*;
 import org.jhotdraw.draw.figure.ConnectionFigure;
-import org.jhotdraw.draw.figure.LineConnectionFigure;
 import org.jhotdraw.draw.connector.Connector;
-import org.jhotdraw.draw.handle.Handle;
 import org.jhotdraw.geom.BezierPath;
 import org.jhotdraw.geom.Geom;
 import org.jhotdraw.xml.DOMInput;
@@ -26,7 +23,7 @@ import org.jhotdraw.xml.DOMStorable;
  * @author Werner Randelshofer
  * @version $Id$
  */
-public class SlantedLiner
+public class SlantedLiner extends AbstractLiner
         implements Liner, DOMStorable {
 
     private double slantSize;
@@ -42,35 +39,7 @@ public class SlantedLiner
         this.slantSize = slantSize;
     }
 
-    @Override
-    public Collection<Handle> createHandles(BezierPath path) {
-        return Collections.emptyList();
-    }
-
-    @Override
-    public void lineout(ConnectionFigure figure) {
-        BezierPath path = ((LineConnectionFigure) figure).getBezierPath();
-        Connector start = figure.getStartConnector();
-        Connector end = figure.getEndConnector();
-        if (start == null || end == null || path == null) {
-            return;
-        }
-        // Special treatment if the connection connects the same figure
-        if (figure.getStartFigure() == figure.getEndFigure()) {
-            lineoutWhenConnectingSameFigure(figure, path, start, end);
-            // Regular treatment if the connection connects to two different figures
-        } else {
-            // Ensure path has exactly four nodes
-            lineoutWhenConnectingDifferentFigures(figure, path, start, end);
-        }
-        // Ensure all path nodes are straight
-        for (BezierPath.Node node : path) {
-            node.setMask(BezierPath.C0_MASK);
-        }
-        path.invalidatePath();
-    }
-
-    private void lineoutWhenConnectingDifferentFigures(ConnectionFigure figure, BezierPath path, Connector start,
+    protected void lineoutWhenConnectingDifferentFigures(ConnectionFigure figure, BezierPath path, Connector start,
             Connector end) {
         while (path.size() < 4) {
             path.add(1, new BezierPath.Node(0, 0));
@@ -132,7 +101,7 @@ public class SlantedLiner
         }
     }
 
-    private void lineoutWhenConnectingSameFigure(ConnectionFigure figure, BezierPath path, Connector start,
+    protected void lineoutWhenConnectingSameFigure(ConnectionFigure figure, BezierPath path, Connector start,
             Connector end) {
         // Ensure path has exactly four nodes
         while (path.size() < 5) {
@@ -217,16 +186,5 @@ public class SlantedLiner
     @Override
     public void write(DOMOutput out) {
         out.addAttribute("slant", slantSize);
-    }
-
-    @Override
-    public Liner clone() {
-        try {
-            return (Liner) super.clone();
-        } catch (CloneNotSupportedException ex) {
-            InternalError error = new InternalError(ex.getMessage());
-            error.initCause(ex);
-            throw error;
-        }
     }
 }

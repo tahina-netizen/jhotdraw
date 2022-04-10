@@ -8,12 +8,8 @@
 package org.jhotdraw.draw.liner;
 
 import org.jhotdraw.draw.figure.ConnectionFigure;
-import org.jhotdraw.draw.figure.LineConnectionFigure;
 import java.awt.geom.*;
-import java.util.*;
-import org.jhotdraw.draw.*;
 import org.jhotdraw.draw.connector.Connector;
-import org.jhotdraw.draw.handle.Handle;
 import org.jhotdraw.geom.BezierPath;
 import org.jhotdraw.geom.Geom;
 import org.jhotdraw.xml.DOMInput;
@@ -26,8 +22,8 @@ import org.jhotdraw.xml.DOMStorable;
  * @author Werner Randelshofer
  * @version $Id$
  */
-public class CurvedLiner
-        implements Liner, DOMStorable {
+public class CurvedLiner extends AbstractLiner
+        implements DOMStorable {
 
     private double shoulderSize;
 
@@ -42,29 +38,7 @@ public class CurvedLiner
         this.shoulderSize = slantSize;
     }
 
-    @Override
-    public Collection<Handle> createHandles(BezierPath path) {
-        return Collections.emptyList();
-    }
-
-    @Override
-    public void lineout(ConnectionFigure figure) {
-        BezierPath path = ((LineConnectionFigure) figure).getBezierPath();
-        Connector start = figure.getStartConnector();
-        Connector end = figure.getEndConnector();
-        if (start == null || end == null || path == null) {
-            return;
-        }
-        // Special treatment if the connection connects the same figure
-        if (figure.getStartFigure() == figure.getEndFigure()) {
-            lineoutWhenConnectingSameFigure(figure, path, start, end);
-        } else {
-            lineoutWhenConnectingDifferentFigures(figure, path, start, end);
-        }
-        path.invalidatePath();
-    }
-
-    private void lineoutWhenConnectingDifferentFigures(ConnectionFigure figure, BezierPath path, Connector start,
+    protected void lineoutWhenConnectingDifferentFigures(ConnectionFigure figure, BezierPath path, Connector start,
             Connector end) {
         Point2D.Double sp = start.findStart(figure);
         Point2D.Double ep = end.findEnd(figure);
@@ -108,7 +82,7 @@ public class CurvedLiner
         }
     }
 
-    private void lineoutWhenConnectingSameFigure(ConnectionFigure figure, BezierPath path, Connector start,
+    protected void lineoutWhenConnectingSameFigure(ConnectionFigure figure, BezierPath path, Connector start,
             Connector end) {
         // Ensure path has exactly 4 nodes
         while (path.size() < 4) {
@@ -194,16 +168,5 @@ public class CurvedLiner
 
     @Override
     public void write(DOMOutput out) {
-    }
-
-    @Override
-    public Liner clone() {
-        try {
-            return (Liner) super.clone();
-        } catch (CloneNotSupportedException ex) {
-            InternalError error = new InternalError(ex.getMessage());
-            error.initCause(ex);
-            throw error;
-        }
     }
 }

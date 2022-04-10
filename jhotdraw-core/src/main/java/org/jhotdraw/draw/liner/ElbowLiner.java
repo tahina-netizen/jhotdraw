@@ -8,12 +8,8 @@
 package org.jhotdraw.draw.liner;
 
 import org.jhotdraw.draw.figure.ConnectionFigure;
-import org.jhotdraw.draw.figure.LineConnectionFigure;
 import java.awt.geom.*;
-import java.util.*;
-import org.jhotdraw.draw.*;
 import org.jhotdraw.draw.connector.Connector;
-import org.jhotdraw.draw.handle.Handle;
 import org.jhotdraw.geom.BezierPath;
 import org.jhotdraw.geom.Geom;
 import org.jhotdraw.xml.DOMInput;
@@ -26,8 +22,8 @@ import org.jhotdraw.xml.DOMStorable;
  * @author Werner Randelshofer
  * @version $Id$
  */
-public class ElbowLiner
-        implements Liner, DOMStorable {
+public class ElbowLiner extends AbstractLiner
+        implements DOMStorable {
 
     private double shoulderSize;
 
@@ -39,41 +35,15 @@ public class ElbowLiner
     }
 
     public ElbowLiner(double slantSize) {
+        super();
         this.shoulderSize = slantSize;
     }
-
-    @Override
-    public Collection<Handle> createHandles(BezierPath path) {
-        return Collections.emptyList();
-    }
-
-    @Override
-    public void lineout(ConnectionFigure figure) {
-        BezierPath path = ((LineConnectionFigure) figure).getBezierPath();
-        Connector start = figure.getStartConnector();
-        Connector end = figure.getEndConnector();
-        if (start == null || end == null || path == null) {
-            return;
-        }
-        // Special treatment if the connection connects the same figure
-        if (figure.getStartFigure() == figure.getEndFigure()) {
-            lineoutWhenConnectingSameFigure(figure, path, start, end);
-        } else {
-            lineoutWhenConnectingDifferentFigures(figure, path, start, end);
-        }
-        // Ensure all path nodes are straight
-        for (BezierPath.Node node : path) {
-            node.setMask(BezierPath.C0_MASK);
-        }
-        path.invalidatePath();
-    }
-
-    private void lineoutWhenConnectingDifferentFigures(ConnectionFigure figure, BezierPath path, Connector start,
+    
+    protected void lineoutWhenConnectingDifferentFigures(ConnectionFigure figure, BezierPath path, Connector start,
             Connector end) {
         Point2D.Double sp = start.findStart(figure);
         Point2D.Double ep = end.findEnd(figure);
         path.clear();
-        path.add(new BezierPath.Node(sp.x, sp.y));
         if (sp.x == ep.x || sp.y == ep.y) {
             path.add(new BezierPath.Node(ep.x, ep.y));
         } else {
@@ -97,28 +67,29 @@ public class ElbowLiner
             }
             if ((soutcode & (Geom.OUT_TOP | Geom.OUT_BOTTOM)) != 0
                     && (eoutcode & (Geom.OUT_TOP | Geom.OUT_BOTTOM)) != 0) {
-                path.add(new BezierPath.Node(sp.x, (sp.y + ep.y) / 2));
-                path.add(new BezierPath.Node(ep.x, (sp.y + ep.y) / 2));
+                path.add(new BezierPath.Node(BezierPath.C2_MASK, sp.x, sp.y, sp.x, sp.y, sp.x, (sp.y + ep.y) / 2));
+                path.add(new BezierPath.Node(BezierPath.C1_MASK, ep.x, ep.y, ep.x, (sp.y + ep.y) / 2, ep.x, ep.y));
             } else if ((soutcode & (Geom.OUT_LEFT | Geom.OUT_RIGHT)) != 0
                     && (eoutcode & (Geom.OUT_LEFT | Geom.OUT_RIGHT)) != 0) {
-                path.add(new BezierPath.Node((sp.x + ep.x) / 2, sp.y));
-                path.add(new BezierPath.Node((sp.x + ep.x) / 2, ep.y));
+                path.add(new BezierPath.Node(BezierPath.C2_MASK, sp.x, sp.y, sp.x, sp.y, (sp.x + ep.x) / 2, sp.y));
+                path.add(new BezierPath.Node(BezierPath.C1_MASK, ep.x, ep.y, (sp.x + ep.x) / 2, ep.y, ep.x, ep.y));
             } else if (soutcode == Geom.OUT_BOTTOM || soutcode == Geom.OUT_TOP) {
-                path.add(new BezierPath.Node(sp.x, ep.y));
+                path.add(new BezierPath.Node(BezierPath.C2_MASK, sp.x, sp.y, sp.x, sp.y, sp.x, ep.y));
+                path.add(new BezierPath.Node(ep.x, ep.y));
             } else {
-                path.add(new BezierPath.Node(ep.x, sp.y));
+                path.add(new BezierPath.Node(BezierPath.C2_MASK, sp.x, sp.y, sp.x, sp.y, ep.x, sp.y));
+                path.add(new BezierPath.Node(ep.x, ep.y));
             }
-            path.add(new BezierPath.Node(ep.x, ep.y));
         }
     }
 
-    private void lineoutWhenConnectingSameFigure(ConnectionFigure figure, BezierPath path, Connector start,
+    protected void lineoutWhenConnectingSameFigure(ConnectionFigure figure, BezierPath path, Connector start,
             Connector end) {
-        // Ensure path has exactly four nodes
-        while (path.size() < 5) {
+        // Ensure path has exactly 4 nodes
+        while (path.size() < 4) {
             path.add(1, new BezierPath.Node(0, 0));
         }
-        while (path.size() > 5) {
+        while (path.size() > 4) {
             path.remove(1);
         }
         Point2D.Double sp = start.findStart(figure);
@@ -153,41 +124,45 @@ public class ElbowLiner
                 soutcode = Geom.OUT_RIGHT;
                 break;
         }
-        path.get(1).moveTo(sp.x + shoulderSize, sp.y);
+        //path.get(0).moveTo(sp.x + shoulderSize, sp.y);
+        path.get(0).mask = BezierPath.C2_MASK;
         if ((soutcode & Geom.OUT_RIGHT) != 0) {
-            path.get(1).moveTo(sp.x + shoulderSize, sp.y);
+            path.get(0).x[2] = sp.x + shoulderSize;
+            path.get(0).y[2] = sp.y;
         } else if ((soutcode & Geom.OUT_LEFT) != 0) {
-            path.get(1).moveTo(sp.x - shoulderSize, sp.y);
+            path.get(0).x[2] = sp.x - shoulderSize;
+            path.get(0).y[2] = sp.y;
         } else if ((soutcode & Geom.OUT_BOTTOM) != 0) {
-            path.get(1).moveTo(sp.x, sp.y + shoulderSize);
+            path.get(0).x[2] = sp.x;
+            path.get(0).y[2] = sp.y + shoulderSize;
         } else {
-            path.get(1).moveTo(sp.x, sp.y - shoulderSize);
+            path.get(0).x[2] = sp.x;
+            path.get(0).y[2] = sp.y - shoulderSize;
         }
+        path.get(1).mask = BezierPath.C2_MASK;
+        path.get(1).moveTo(sp.x + shoulderSize, (sp.y + ep.y) / 2);
+        path.get(1).x[2] = sp.x + shoulderSize;
+        path.get(1).y[2] = ep.y - shoulderSize;
+        path.get(2).mask = BezierPath.C1_MASK;
+        path.get(2).moveTo((sp.x + ep.x) / 2, ep.y - shoulderSize);
+        path.get(2).x[1] = sp.x + shoulderSize;
+        path.get(2).y[1] = ep.y - shoulderSize;
+        path.get(3).mask = BezierPath.C1_MASK;
         if ((eoutcode & Geom.OUT_RIGHT) != 0) {
-            path.get(3).moveTo(ep.x + shoulderSize, ep.y);
+            path.get(3).x[1] = ep.x + shoulderSize;
+            path.get(3).y[1] = ep.y;
         } else if ((eoutcode & Geom.OUT_LEFT) != 0) {
-            path.get(3).moveTo(ep.x - shoulderSize, ep.y);
+            path.get(3).x[1] = ep.x - shoulderSize;
+            path.get(3).y[1] = ep.y;
         } else if ((eoutcode & Geom.OUT_BOTTOM) != 0) {
-            path.get(3).moveTo(ep.x, ep.y + shoulderSize);
+            path.get(3).x[1] = ep.x;
+            path.get(3).y[1] = ep.y + shoulderSize;
         } else {
-            path.get(3).moveTo(ep.x, ep.y - shoulderSize);
-        }
-        switch (soutcode) {
-            case Geom.OUT_RIGHT:
-                path.get(2).moveTo(path.get(1).x[0], path.get(3).y[0]);
-                break;
-            case Geom.OUT_TOP:
-                path.get(2).moveTo(path.get(1).y[0], path.get(3).x[0]);
-                break;
-            case Geom.OUT_LEFT:
-                path.get(2).moveTo(path.get(1).x[0], path.get(3).y[0]);
-                break;
-            case Geom.OUT_BOTTOM:
-            default:
-                path.get(2).moveTo(path.get(1).y[0], path.get(3).x[0]);
-                break;
+            path.get(3).x[1] = ep.x;
+            path.get(3).y[1] = ep.y - shoulderSize;
         }
     }
+    
 
     @Override
     public void read(DOMInput in) {
@@ -195,16 +170,5 @@ public class ElbowLiner
 
     @Override
     public void write(DOMOutput out) {
-    }
-
-    @Override
-    public Liner clone() {
-        try {
-            return (Liner) super.clone();
-        } catch (CloneNotSupportedException ex) {
-            InternalError error = new InternalError(ex.getMessage());
-            error.initCause(ex);
-            throw error;
-        }
     }
 }
