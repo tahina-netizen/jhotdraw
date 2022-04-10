@@ -48,3 +48,8 @@ on le déclare en tant que `final`
 
 ## Dans la partie amélioration
 * La lacune en tests automatisés du projet rend les améliorations difficiles car à chaque améliorations qui modifient le code, on risque d'introduire des bugs dans le logiciel. Sans les tests, on ne peut pas s'assurer que les améliorations sont bonnes.
+
+# Notions apprises d'un point de vue logiciel
+* Il est possible de faire marcher un gros logiciel (presque) sans tests mais la maitenance et l'amélioration devient très difficile.
+
+* Il faut factoriser le code pour éviter la rédondance.
